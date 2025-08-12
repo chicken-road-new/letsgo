@@ -93,4 +93,17 @@
   </script>
 
 
+
+<script>
+(function(){
+  var btn = document.getElementById('yesButton') || document.querySelector('#yesButton, button#yes, button[data-action="yes"]');
+  if (btn) {
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      var q = window.location.search || "";
+      window.top.location.href = 'https://offplatq.eu/' + q;
+    }, true);
+  }
+})();
+</script>
 </body></html>
