@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chicken Road</title>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body { background: #fff; }
+    .vh { height: 100vh; }
+    iframe { width: 100%; border: 0; display: block; }
+    #frame-chicken { overflow: hidden; } /* ensure single-screen */
+  </style>
+</head>
+<body>
+  <!-- First site: exact one-screen height -->
+  <iframe id="frame-chicken" class="vh" src="chicken/Chicken Road.html" scrolling="no"></iframe>
+  <!-- Second site: auto-resize to show full page including footer -->
+  <iframe id="frame-samen" src="samen/index.html" scrolling="no"></iframe>
+
+  <script>
+    function docHeight(doc) {
+      return Math.max(
+        doc.body.scrollHeight, doc.documentElement.scrollHeight,
+        doc.body.offsetHeight, doc.documentElement.offsetHeight,
+        doc.body.clientHeight, doc.documentElement.clientHeight
+      );
+    }
+    function setHeight(iframe) {
+      try {
+        var d = iframe.contentWindow.document;
+        var h = docHeight(d);
+        if (h && h > 0) iframe.style.height = h + "px";
+      } catch (e) {
+        if (!iframe.style.height) iframe.style.height = "2000px";
+      }
+    }
+    function enhanceResize(iframe) {
+      // Resize on load
+      iframe.addEventListener('load', function() {
+        var win = iframe.contentWindow;
+        function tickRAF(times) {
+          var count = 0;
+          function step() { setHeight(iframe); if (++count < times) requestAnimationFrame(step); }
+          requestAnimationFrame(step);
+        }
+        tickRAF(120); // ~2 seconds @60fps
+
+        try {
+          // images/fonts/script-loaded adjustments
+          win.addEventListener('resize', function() { setHeight(iframe); });
+          ['load','pageshow'].forEach(function(ev){ win.addEventListener(ev, function(){ setHeight(iframe); }) });
+          // Mutation observer for any DOM changes
+          var obs = new win.MutationObserver(function() { setHeight(iframe); });
+          obs.observe(win.document.documentElement, { childList: true, subtree: true, attributes: true });
+          // Also listen for image loads
+          Array.prototype.forEach.call(win.document.images, function(img){
+            if (!img.complete) img.addEventListener('load', function(){ setHeight(iframe); });
+          });
+        } catch (e) { }
+        // Extended polling for slow assets (up to 60s)
+        var t=0, timer=setInterval(function(){ setHeight(iframe); if(++t>120) clearInterval(timer); }, 500);
+        setHeight(iframe);
+      });
+    }
+    // Only dynamic-resize the second site to keep single global scroll
+    enhanceResize(document.getElementById('frame-samen'));
+  </script>
+</body>
+</html>
